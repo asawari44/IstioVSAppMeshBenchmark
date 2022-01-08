@@ -1,0 +1,101 @@
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: reviews
+  namespace: appmesh-bookinfo
+spec:
+  podSelector:
+    matchLabels:
+      app: reviews
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: reviews.appmesh-bookinfo.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: reviews-v2
+  namespace: appmesh-bookinfo
+spec:
+  podSelector:
+    matchLabels:
+      app: reviews-v2
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: reviews-v2.appmesh-bookinfo.svc.cluster.local
+  backends:
+    - virtualService:
+       virtualServiceRef:
+          name: ratings
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: reviews-v3
+  namespace: appmesh-bookinfo
+spec:
+  podSelector:
+    matchLabels:
+      app: reviews-v3
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: reviews-v3.appmesh-bookinfo.svc.cluster.local
+  backends:
+    - virtualService:
+       virtualServiceRef:
+          name: ratings
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: reviews
+  namespace: appmesh-bookinfo
+spec:
+  awsName: reviews
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: reviews-virtual-router
+  
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: appmesh-bookinfo
+  name: reviews-virtual-router
+spec:
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  routes:
+    - name: reviews-route
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: reviews
+              weight: 1
+            - virtualNodeRef:
+                name: reviews-v2
+              weight: 1
+            - virtualNodeRef:
+                name: reviews-v3
+              weight: 1
+            

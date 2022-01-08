@@ -1,0 +1,52 @@
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: details
+  namespace: appmesh-bookinfo
+spec:
+  podSelector:
+    matchLabels:
+      app: details
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: details.appmesh-bookinfo.svc.cluster.local
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: details
+  namespace: appmesh-bookinfo
+spec:
+  awsName: details
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: details-virtual-router
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: appmesh-bookinfo
+  name: details-virtual-router
+spec:
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  routes:
+    - name: details-route
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: details
+              weight: 1

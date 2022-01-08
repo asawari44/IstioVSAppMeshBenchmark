@@ -1,0 +1,51 @@
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: ratings
+  namespace: appmesh-bookinfo
+spec:
+  podSelector:
+    matchLabels:
+      app: ratings
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: ratings.appmesh-bookinfo.svc.cluster.local
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: ratings
+  namespace: appmesh-bookinfo
+spec:
+  awsName: ratings
+  provider:
+    virtualRouter:
+      virtualRouterRef:
+        name: ratings-virtual-router
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: appmesh-bookinfo
+  name: ratings-virtual-router
+spec:
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  routes:
+    - name: ratings-route
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: ratings
+              weight: 1

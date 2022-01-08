@@ -1,0 +1,18 @@
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: locust
+  namespace: appmesh-bookinfo
+spec:
+  podSelector:
+    matchLabels:
+      app: locust-master
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  serviceDiscovery:
+    dns:
+      hostname: locust-master.appmesh-bookinfo.svc.cluster.local
+

@@ -1,0 +1,61 @@
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualNode
+metadata:
+  name: productpage
+  namespace: appmesh-bookinfo
+spec:
+  awsName: productpage-virtual-node
+  podSelector:
+    matchLabels:
+      app: productpage
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http  
+  serviceDiscovery:
+    dns:
+      hostname: productpage.appmesh-bookinfo.svc.cluster.local
+  backends:
+    - virtualService:
+       virtualServiceRef:
+          name: details
+    - virtualService:
+       virtualServiceRef:
+          name: reviews
+    - virtualService:
+       virtualServiceRef:
+          name: ratings
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualService
+metadata:
+  name: productpage
+  namespace: appmesh-bookinfo
+spec:
+  awsName: productpage
+  provider:
+    virtualNode:
+      virtualNodeRef:
+        name: productpage
+
+---
+apiVersion: appmesh.k8s.aws/v1beta2
+kind: VirtualRouter
+metadata:
+  namespace: appmesh-bookinfo
+  name: productpage-virtual-router
+spec:
+  listeners:
+    - portMapping:
+        port: 9080
+        protocol: http
+  routes:
+    - name: productpage-route
+      httpRoute:
+        match:
+          prefix: /
+        action:
+          weightedTargets:
+            - virtualNodeRef:
+                name: productpage
+              weight: 1

@@ -1,0 +1,33 @@
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: fortio
+  labels:
+    name: fortio
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: fortio
+  name: fortio
+  labels:
+    app: fortio
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fortio
+  template:
+    metadata:
+      labels:
+        app: fortio
+    spec:
+      containers:
+      - name: fortio
+        image: fortio/fortio
+        ports:
+        - containerPort: 8080
+        - containerPort: 8079
+      nodeSelector:
+        app: system
